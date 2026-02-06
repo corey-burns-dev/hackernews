@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import DreamscapeLayout from "./dreamscape";
 
 const API_BASE = "https://hacker-news.firebaseio.com/v0";
 const MAX_FRONT_PAGE_STORIES = 30;
@@ -95,7 +94,7 @@ async function fetchItemById(
 
 function formatRelativeAge(unixTimeSeconds?: number): string {
   if (!unixTimeSeconds) return "unknown";
-  const nowSeconds = Math.floor(Date.now("./globals.css") / 1000);
+  const nowSeconds = Math.floor(Date.now() / 1000);
   const diff = Math.max(0, nowSeconds - unixTimeSeconds);
   if (diff < 60) return `${diff}s ago`;
   const mins = Math.floor(diff / 60);
@@ -317,131 +316,119 @@ function FeedView({ section }: { section: Section }) {
   }, [items.length, loadState, section]);
 
   return (
-    <DreamscapeLayout
-      title="HN Afterglow"
-      kicker="Hackernews Relay"
-      subtitle="A live front page rebuilt from the Hacker News API."
-      quote="Top stories stream in from the wire, filtered to 30 posts only."
-      hideHero
-    >
-      <section className="grid gap-6">
-        <FeedNav activeSection={section} />
+    <section className="grid gap-6">
+      <FeedNav activeSection={section} />
 
-        <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/55 backdrop-blur">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/70">
-              Realtime Feed
-            </p>
-            <h3 className="mt-1 text-2xl font-semibold text-cyan-50">
-              {section === "top" ? "Front Page 30" : `${section} 30`}
-            </h3>
-          </div>
-          <div className="flex items-center gap-3">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-300/80">
-              {statusCopy}
-            </p>
-            <button
-              type="button"
-              onClick={() => setReloadKey((current) => current + 1)}
-              disabled={loadState === "loading" || section === "submit"}
-              className="rounded-full border border-cyan-100/30 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-cyan-100 transition hover:bg-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Refresh
-            </button>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/55 backdrop-blur">
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/70">
+            Realtime Feed
+          </p>
+          <h3 className="mt-1 text-2xl font-semibold text-cyan-50">
+            {section === "top" ? "Front Page 30" : `${section} 30`}
+          </h3>
         </div>
+        <div className="flex items-center gap-3">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-300/80">
+            {statusCopy}
+          </p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((current) => current + 1)}
+            disabled={loadState === "loading" || section === "submit"}
+            className="rounded-full border border-cyan-100/30 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-cyan-100 transition hover:bg-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
 
-        {section === "submit" ? (
-          <div className="p-5 border rounded-2xl border-white/20 bg-slate-900/55 backdrop-blur-md">
-            <h4 className="text-lg font-semibold text-white">
-              Submit to HN Afterglow
-            </h4>
-            <p className="mt-2 text-sm text-slate-300">
-              This is the local submit page placeholder for your clone. We can
-              wire storage next.
-            </p>
-          </div>
-        ) : null}
+      {section === "submit" ? (
+        <div className="p-5 border rounded-2xl border-white/20 bg-slate-900/55 backdrop-blur-md">
+          <h4 className="text-lg font-semibold text-white">
+            Submit to HN Afterglow
+          </h4>
+          <p className="mt-2 text-sm text-slate-300">
+            This is the local submit page placeholder for your clone. We can
+            wire storage next.
+          </p>
+        </div>
+      ) : null}
 
-        {loadState === "error" ? (
-          <div className="p-5 text-sm border rounded-2xl border-rose-200/30 bg-rose-900/20 text-rose-100">
-            {errorMessage}
-          </div>
-        ) : null}
+      {loadState === "error" ? (
+        <div className="p-5 text-sm border rounded-2xl border-rose-200/30 bg-rose-900/20 text-rose-100">
+          {errorMessage}
+        </div>
+      ) : null}
 
-        <ol className="space-y-3">
-          {items.map((item, index) => {
-            const isComment = item.type === "comment";
-            const title = isComment
-              ? `Comment by ${item.by ?? "unknown"}`
-              : (item.title ?? "Untitled story");
-            const snippet = isComment
-              ? toPlainText(item.text).slice(0, 180)
-              : "";
-            const detailPath = `/?post=${item.id}&from=${section}`;
-            const externalUrl = item.url;
+      <ol className="space-y-3">
+        {items.map((item, index) => {
+          const isComment = item.type === "comment";
+          const title = isComment
+            ? `Comment by ${item.by ?? "unknown"}`
+            : (item.title ?? "Untitled story");
+          const snippet = isComment ? toPlainText(item.text).slice(0, 180) : "";
+          const detailPath = `/?post=${item.id}&from=${section}`;
+          const externalUrl = item.url;
 
-            return (
-              <motion.li
-                key={item.id}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: index * 0.015 }}
-                onClick={() => router.push(detailPath)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    router.push(detailPath);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                className="p-4 border cursor-pointer rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="mb-2 text-xs uppercase tracking-[0.2em] text-cyan-100/70">
-                      #{index + 1} · {getDomain(item.url)}
-                    </p>
-                    {externalUrl ? (
-                      <a
-                        href={externalUrl}
-                        onClick={(event) => event.stopPropagation()}
-                        className="text-lg font-semibold text-white hover:text-cyan-100 hover:underline"
-                      >
-                        {title}
-                      </a>
-                    ) : (
-                      <h4 className="text-lg font-semibold text-white">
-                        {title}
-                      </h4>
-                    )}
-                    {snippet ? (
-                      <p className="mt-2 text-sm text-slate-300/85">
-                        {snippet}
-                      </p>
-                    ) : null}
-                    <p className="mt-2 text-sm text-slate-300/85">
-                      {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
-                      {formatRelativeAge(item.time)}
-                    </p>
-                  </div>
-                  <Link
-                    href={detailPath}
-                    onClick={(event) => event.stopPropagation()}
-                    className="shrink-0 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.14em] text-slate-100 hover:bg-white/15"
-                  >
-                    {isComment
-                      ? "view thread"
-                      : `${item.descendants ?? 0} comments`}
-                  </Link>
+          return (
+            <motion.li
+              key={item.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: index * 0.015 }}
+              onClick={() => router.push(detailPath)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  router.push(detailPath);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              className="p-4 border cursor-pointer rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="mb-2 text-xs uppercase tracking-[0.2em] text-cyan-100/70">
+                    #{index + 1} · {getDomain(item.url)}
+                  </p>
+                  {externalUrl ? (
+                    <a
+                      href={externalUrl}
+                      onClick={(event) => event.stopPropagation()}
+                      className="text-lg font-semibold text-white hover:text-cyan-100 hover:underline"
+                    >
+                      {title}
+                    </a>
+                  ) : (
+                    <h4 className="text-lg font-semibold text-white">
+                      {title}
+                    </h4>
+                  )}
+                  {snippet ? (
+                    <p className="mt-2 text-sm text-slate-300/85">{snippet}</p>
+                  ) : null}
+                  <p className="mt-2 text-sm text-slate-300/85">
+                    {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
+                    {formatRelativeAge(item.time)}
+                  </p>
                 </div>
-              </motion.li>
-            );
-          })}
-        </ol>
-      </section>
-    </DreamscapeLayout>
+                <Link
+                  href={detailPath}
+                  onClick={(event) => event.stopPropagation()}
+                  className="shrink-0 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.14em] text-slate-100 hover:bg-white/15"
+                >
+                  {isComment
+                    ? "view thread"
+                    : `${item.descendants ?? 0} comments`}
+                </Link>
+              </div>
+            </motion.li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 
@@ -525,90 +512,82 @@ function PostView({
   };
 
   return (
-    <DreamscapeLayout
-      title="HN Afterglow"
-      kicker="Hackernews Relay"
-      subtitle="Thread View"
-      quote="Internal post route, no outbound auto-redirect."
-      hideHero
-    >
-      <section className="grid gap-6">
-        <FeedNav activeSection={fromSection} />
+    <section className="grid gap-6">
+      <FeedNav activeSection={fromSection} />
 
-        <div className="px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/55 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-2xl font-semibold text-cyan-50">Post</h3>
-            <Link
-              href={backPath}
-              className="rounded-full border border-cyan-100/30 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.18em] text-cyan-100 hover:bg-cyan-300/20"
-            >
-              Back to {fromSection}
-            </Link>
-          </div>
-        </div>
-
-        {loadState === "error" ? (
-          <div className="p-5 text-sm border rounded-2xl border-rose-200/30 bg-rose-900/20 text-rose-100">
-            {errorMessage}
-          </div>
-        ) : null}
-
-        {item ? (
-          <article
-            onClick={scrollToComments}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                scrollToComments();
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            className="p-6 border cursor-pointer rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md"
+      <div className="px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/55 backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-2xl font-semibold text-cyan-50">Post</h3>
+          <Link
+            href={backPath}
+            className="rounded-full border border-cyan-100/30 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.18em] text-cyan-100 hover:bg-cyan-300/20"
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">
-              {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
-              {formatRelativeAge(item.time)}
-            </p>
-            {storyUrl ? (
-              <a
-                href={storyUrl}
-                onClick={(event) => event.stopPropagation()}
-                className="block mt-2 text-3xl font-semibold text-white hover:text-cyan-100 hover:underline"
-              >
-                {item.title ?? `Thread #${item.id}`}
-              </a>
-            ) : (
-              <h1 className="mt-2 text-3xl font-semibold text-white">
-                {item.title ?? `Thread #${item.id}`}
-              </h1>
-            )}
-            {item.text ? (
-              <p className="w-full min-w-0 mt-4 text-lg leading-relaxed whitespace-pre-wrap max-w-none text-slate-200/90 wrap-anywhere">
-                {toPlainText(item.text)}
-              </p>
-            ) : null}
-          </article>
-        ) : loadState === "loading" ? (
-          <div className="p-5 text-sm border rounded-2xl border-white/15 bg-slate-900/55 text-slate-200">
-            Loading post...
-          </div>
-        ) : null}
+            Back to {fromSection}
+          </Link>
+        </div>
+      </div>
 
-        <section id="comments" className="min-w-0 space-y-3">
-          <h2 className="text-xl font-semibold text-white">Comments</h2>
-          {comments.length === 0 ? (
-            <div className="p-4 text-sm border rounded-2xl border-white/15 bg-slate-900/55 text-slate-300">
-              No comments yet.
-            </div>
+      {loadState === "error" ? (
+        <div className="p-5 text-sm border rounded-2xl border-rose-200/30 bg-rose-900/20 text-rose-100">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      {item ? (
+        <article
+          onClick={scrollToComments}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              scrollToComments();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          className="p-6 border cursor-pointer rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md"
+        >
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">
+            {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
+            {formatRelativeAge(item.time)}
+          </p>
+          {storyUrl ? (
+            <a
+              href={storyUrl}
+              onClick={(event) => event.stopPropagation()}
+              className="block mt-2 text-3xl font-semibold text-white hover:text-cyan-100 hover:underline"
+            >
+              {item.title ?? `Thread #${item.id}`}
+            </a>
           ) : (
-            comments.map((comment) => (
-              <CommentTree key={comment.id} node={comment} />
-            ))
+            <h1 className="mt-2 text-3xl font-semibold text-white">
+              {item.title ?? `Thread #${item.id}`}
+            </h1>
           )}
-        </section>
+          {item.text ? (
+            <p className="w-full min-w-0 mt-4 text-lg leading-relaxed whitespace-pre-wrap max-w-none text-slate-200/90 wrap-anywhere">
+              {toPlainText(item.text)}
+            </p>
+          ) : null}
+        </article>
+      ) : loadState === "loading" ? (
+        <div className="p-5 text-sm border rounded-2xl border-white/15 bg-slate-900/55 text-slate-200">
+          Loading post...
+        </div>
+      ) : null}
+
+      <section id="comments" className="min-w-0 space-y-3">
+        <h2 className="text-xl font-semibold text-white">Comments</h2>
+        {comments.length === 0 ? (
+          <div className="p-4 text-sm border rounded-2xl border-white/15 bg-slate-900/55 text-slate-300">
+            No comments yet.
+          </div>
+        ) : (
+          comments.map((comment) => (
+            <CommentTree key={comment.id} node={comment} />
+          ))
+        )}
       </section>
-    </DreamscapeLayout>
+    </section>
   );
 }
 
