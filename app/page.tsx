@@ -158,10 +158,10 @@ async function fetchItemsByIds(
   return items;
 }
 
-async function loadFeed(
+async function fetchStoryIds(
   section: Section,
   signal: AbortSignal,
-): Promise<HNItem[]> {
+): Promise<number[]> {
   if (section === "submit") return [];
 
   if (section === "comments") {
@@ -169,13 +169,9 @@ async function loadFeed(
       `${API_BASE}/updates.json`,
       signal,
     );
-    const ids = (updates.items ?? []).filter(
+    return (updates.items ?? []).filter(
       (id): id is number => typeof id === "number",
     );
-    const items = await fetchItemsByIds(ids.slice(0, 180), signal);
-    return items
-      .filter((item) => item.type === "comment" && !!item.text)
-      .slice(0, MAX_FRONT_PAGE_STORIES);
   }
 
   const endpoint =
@@ -193,21 +189,7 @@ async function loadFeed(
     `${API_BASE}/${endpoint}.json`,
     signal,
   );
-  const safeIds = storyIds.filter((id): id is number => typeof id === "number");
-  const selectedIds =
-    section === "past"
-      ? safeIds.slice(MAX_FRONT_PAGE_STORIES, MAX_FRONT_PAGE_STORIES * 2)
-      : safeIds.slice(0, MAX_FRONT_PAGE_STORIES * 2);
-
-  const items = await fetchItemsByIds(selectedIds, signal);
-  if (section === "jobs") {
-    return items
-      .filter((item) => item.type === "job")
-      .slice(0, MAX_FRONT_PAGE_STORIES);
-  }
-  return items
-    .filter((item) => item.type === "story" || item.type === "poll")
-    .slice(0, MAX_FRONT_PAGE_STORIES);
+  return storyIds.filter((id): id is number => typeof id === "number");
 }
 
 async function buildCommentTree(
@@ -261,10 +243,15 @@ function FeedNav({ activeSection }: { activeSection: Section }) {
 
 function FeedView({ section }: { section: Section }) {
   const router = useRouter();
+  const [ids, setIds] = useState<number[]>([]);
   const [items, setItems] = useState<HNItem[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [nextFetchIndex, setNextFetchIndex] = useState(MAX_FRONT_PAGE_STORIES);
   const requestRef = useRef<AbortController | null>(null);
+
+  // Constants
+  const PAGE_SIZE = 30;
 
   useEffect(() => {
     requestRef.current?.abort();
@@ -276,19 +263,42 @@ function FeedView({ section }: { section: Section }) {
       if (isActive) {
         setLoadState("loading");
         setErrorMessage("");
+        setItems([]);
+        setIds([]);
       }
 
       if (section === "submit") {
         if (!isActive) return;
-        setItems([]);
         setLoadState("ready");
         return;
       }
 
       try {
-        const nextItems = await loadFeed(section, controller.signal);
+        const allIds = await fetchStoryIds(section, controller.signal);
         if (!isActive || controller.signal.aborted) return;
-        setItems(nextItems);
+        setIds(allIds);
+
+        const startIndex = section === "past" ? MAX_FRONT_PAGE_STORIES : 0;
+        const initialChunk = allIds.slice(startIndex, startIndex + PAGE_SIZE);
+
+        // Update next index for pagination
+        setNextFetchIndex(startIndex + PAGE_SIZE);
+
+        const initialItems = await fetchItemsByIds(
+          initialChunk,
+          controller.signal,
+        );
+        if (!isActive || controller.signal.aborted) return;
+
+        const filteredItems = initialItems.filter((item) => {
+          if (!item || item.dead || item.deleted) return false;
+          if (section === "jobs") return item.type === "job";
+          if (section === "comments")
+            return item.type === "comment" && !!item.text;
+          return item.type === "story" || item.type === "poll";
+        });
+
+        setItems(filteredItems);
         setLoadState("ready");
       } catch (error: unknown) {
         if (!isActive || controller.signal.aborted) return;
@@ -321,19 +331,34 @@ function FeedView({ section }: { section: Section }) {
     setErrorMessage("");
 
     if (section === "submit") {
-      setItems([]);
       setLoadState("ready");
       return;
     }
 
     try {
-      const nextItems = await loadFeed(section, controller.signal);
+      const allIds = await fetchStoryIds(section, controller.signal);
       if (controller.signal.aborted) return;
-      setItems(nextItems);
+      setIds(allIds);
+
+      const startIndex = section === "past" ? MAX_FRONT_PAGE_STORIES : 0;
+      const initialChunk = allIds.slice(startIndex, startIndex + PAGE_SIZE);
+      setNextFetchIndex(startIndex + PAGE_SIZE);
+
+      const nextItems = await fetchItemsByIds(initialChunk, controller.signal);
+      if (controller.signal.aborted) return;
+
+      const filteredItems = nextItems.filter((item) => {
+        if (!item || item.dead || item.deleted) return false;
+        if (section === "jobs") return item.type === "job";
+        if (section === "comments")
+          return item.type === "comment" && !!item.text;
+        return item.type === "story" || item.type === "poll";
+      });
+
+      setItems(filteredItems);
       setLoadState("ready");
     } catch (error: unknown) {
       if (controller.signal.aborted) return;
-      setItems([]);
       setLoadState("error");
       setErrorMessage(
         error instanceof Error
@@ -347,12 +372,47 @@ function FeedView({ section }: { section: Section }) {
     }
   };
 
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || ids.length === 0 || nextFetchIndex >= ids.length) return;
+    setLoadingMore(true);
+
+    try {
+      const chunk = ids.slice(nextFetchIndex, nextFetchIndex + PAGE_SIZE);
+      if (chunk.length === 0) {
+        setLoadingMore(false);
+        return;
+      }
+
+      const tempController = new AbortController();
+      const newItems = await fetchItemsByIds(chunk, tempController.signal);
+
+      const filteredNewItems = newItems.filter((item) => {
+        if (!item || item.dead || item.deleted) return false;
+        if (section === "jobs") return item.type === "job";
+        if (section === "comments")
+          return item.type === "comment" && !!item.text;
+        return item.type === "story" || item.type === "poll";
+      });
+
+      setItems((prev) => [...prev, ...filteredNewItems]);
+      setNextFetchIndex((prev) => prev + PAGE_SIZE);
+    } catch (err) {
+      console.error("Failed to load more items", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   const statusCopy = useMemo(() => {
     if (section === "submit") return "Submit mode";
     if (loadState === "loading") return "Syncing feed...";
     if (loadState === "error") return "Signal lost";
-    return `${items.length} / ${MAX_FRONT_PAGE_STORIES} loaded`;
+    return `${items.length} stories loaded`;
   }, [items.length, loadState, section]);
+
+  const hasMore = ids.length > 0 && nextFetchIndex < ids.length;
 
   return (
     <section className="grid gap-6">
@@ -364,7 +424,7 @@ function FeedView({ section }: { section: Section }) {
             Realtime Feed
           </p>
           <h3 className="mt-1 text-2xl font-semibold text-cyan-50">
-            {section === "top" ? "Front Page 30" : `${section} 30`}
+            {section === "top" ? "Front Page" : `${section}`}
           </h3>
         </div>
         <div className="flex items-center gap-3">
@@ -409,13 +469,15 @@ function FeedView({ section }: { section: Section }) {
           const snippet = isComment ? toPlainText(item.text).slice(0, 180) : "";
           const detailPath = `/?post=${item.id}&from=${section}`;
           const externalUrl = item.url;
+          const rank =
+            section === "past" ? index + 1 + MAX_FRONT_PAGE_STORIES : index + 1;
 
           return (
             <motion.li
               key={item.id}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: index * 0.015 }}
+              transition={{ duration: 0.35, delay: (index % 30) * 0.015 }}
               onClick={() => router.push(detailPath)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -430,7 +492,7 @@ function FeedView({ section }: { section: Section }) {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="mb-2 text-xs uppercase tracking-[0.2em] text-cyan-100/70">
-                    #{index + 1} · {getDomain(item.url)}
+                    #{rank} · {getDomain(item.url)}
                   </p>
                   {externalUrl ? (
                     <a
@@ -467,6 +529,19 @@ function FeedView({ section }: { section: Section }) {
           );
         })}
       </ol>
+
+      {loadState === "ready" && hasMore ? (
+        <div className="flex justify-center py-6">
+          <button
+            type="button"
+            onClick={() => void handleLoadMore()}
+            disabled={loadingMore}
+            className="rounded-full border border-cyan-100/30 bg-cyan-300/10 px-8 py-3 text-sm uppercase tracking-[0.2em] text-cyan-100 transition hover:bg-cyan-300/20 disabled:opacity-50"
+          >
+            {loadingMore ? "Loading..." : "Load More Stories"}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }
