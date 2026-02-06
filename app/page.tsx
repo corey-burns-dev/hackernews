@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = "https://hacker-news.firebaseio.com/v0";
 const MAX_FRONT_PAGE_STORIES = 30;
@@ -264,10 +264,12 @@ function FeedView({ section }: { section: Section }) {
   const [items, setItems] = useState<HNItem[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [reloadKey, setReloadKey] = useState(0);
+  const requestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    requestRef.current?.abort();
     const controller = new AbortController();
+    requestRef.current = controller;
     let isActive = true;
 
     const run = async () => {
@@ -305,8 +307,45 @@ function FeedView({ section }: { section: Section }) {
     return () => {
       isActive = false;
       controller.abort();
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+      }
     };
-  }, [reloadKey, section]);
+  }, [section]);
+
+  const handleRefresh = async () => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setLoadState("loading");
+    setErrorMessage("");
+
+    if (section === "submit") {
+      setItems([]);
+      setLoadState("ready");
+      return;
+    }
+
+    try {
+      const nextItems = await loadFeed(section, controller.signal);
+      if (controller.signal.aborted) return;
+      setItems(nextItems);
+      setLoadState("ready");
+    } catch (error: unknown) {
+      if (controller.signal.aborted) return;
+      setItems([]);
+      setLoadState("error");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to refresh Hacker News feed.",
+      );
+    } finally {
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+      }
+    }
+  };
 
   const statusCopy = useMemo(() => {
     if (section === "submit") return "Submit mode";
@@ -334,7 +373,7 @@ function FeedView({ section }: { section: Section }) {
           </p>
           <button
             type="button"
-            onClick={() => setReloadKey((current) => current + 1)}
+            onClick={() => void handleRefresh()}
             disabled={loadState === "loading" || section === "submit"}
             className="rounded-full border border-cyan-100/30 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-cyan-100 transition hover:bg-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -534,26 +573,21 @@ function PostView({
       ) : null}
 
       {item ? (
-        <article
-          onClick={scrollToComments}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              scrollToComments();
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          className="p-6 border cursor-pointer rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md"
-        >
+        <article className="p-6 border rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">
             {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
             {formatRelativeAge(item.time)}
           </p>
+          <button
+            type="button"
+            onClick={scrollToComments}
+            className="mt-3 rounded-full border border-cyan-100/30 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-300/20"
+          >
+            Jump to comments
+          </button>
           {storyUrl ? (
             <a
               href={storyUrl}
-              onClick={(event) => event.stopPropagation()}
               className="block mt-2 text-3xl font-semibold text-white hover:text-cyan-100 hover:underline"
             >
               {item.title ?? `Thread #${item.id}`}
