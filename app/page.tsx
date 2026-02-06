@@ -460,7 +460,7 @@ function FeedView({ section }: { section: Section }) {
         </div>
       ) : null}
 
-      <ol className="space-y-3">
+      <ol className="space-y-3 overflow-anchor-none">
         {items.map((item, index) => {
           const isComment = item.type === "comment";
           const title = isComment
