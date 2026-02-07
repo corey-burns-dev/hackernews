@@ -546,6 +546,18 @@ function FeedView({ section }: { section: Section }) {
   );
 }
 
+function CommentSkeleton() {
+  return (
+    <div className="box-border w-full min-w-0 p-4 border animate-pulse rounded-xl border-white/10 bg-slate-900/40 backdrop-blur-md">
+      <div className="h-3 w-32 rounded-full bg-white/10 mb-3" />
+      <div className="space-y-2">
+        <div className="h-4 w-full rounded-full bg-white/5" />
+        <div className="h-4 w-5/6 rounded-full bg-white/5" />
+      </div>
+    </div>
+  );
+}
+
 function CommentTree({
   node,
   depth = 0,
@@ -557,13 +569,13 @@ function CommentTree({
   const indent = Math.min(depth * 10, 28);
   return (
     <div
-      className="box-border w-full max-w-full min-w-0 p-4 border rounded-xl border-white/20 bg-slate-900/80 backdrop-blur-md"
-      style={{ marginLeft: `${indent}px`, width: `calc(100% - ${indent}px)` }}
+      className="box-border w-full min-w-0 p-4 border rounded-xl border-white/20 bg-slate-900/80 backdrop-blur-md"
+      style={{ marginLeft: `${indent}px` }}
     >
       <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/85">
         {node.by ?? "unknown"} · {formatRelativeAge(node.time)}
       </p>
-      <p className="mt-2 w-full min-w-0 max-w-full text-base leading-relaxed text-slate-100/95 break-all whitespace-pre-wrap wrap-anywhere">
+      <p className="mt-2 w-full min-w-0 text-base leading-relaxed text-slate-100/95 wrap-break-word whitespace-pre-wrap">
         {commentText}
       </p>
       {node.children.length > 0 ? (
@@ -586,7 +598,7 @@ function PostView({
 }) {
   const [item, setItem] = useState<HNItem | null>(null);
   const [comments, setComments] = useState<HNCommentNode[]>([]);
-  const [loadState, setLoadState] = useState<LoadState>("idle");
+  const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -673,7 +685,7 @@ function PostView({
             </h1>
           )}
           {item.text ? (
-            <p className="w-full min-w-0 mt-4 text-lg leading-relaxed whitespace-pre-wrap max-w-none text-slate-200/90 wrap-anywhere">
+            <p className="w-full min-w-0 mt-4 text-lg leading-relaxed whitespace-pre-wrap text-slate-200/90 wrap-break-word">
               {toPlainText(item.text)}
             </p>
           ) : null}
@@ -686,7 +698,13 @@ function PostView({
 
       <section id="comments" className="min-w-0 space-y-3">
         <h2 className="text-xl font-semibold text-white">Comments</h2>
-        {comments.length === 0 ? (
+        {loadState === "loading" || loadState === "idle" ? (
+          <div className="space-y-3">
+            <CommentSkeleton />
+            <CommentSkeleton />
+            <CommentSkeleton />
+          </div>
+        ) : comments.length === 0 ? (
           <div className="p-4 text-sm border rounded-2xl border-white/15 bg-slate-900/55 text-slate-300">
             No comments yet.
           </div>
@@ -717,9 +735,15 @@ function HackerNewsFrontPageInner() {
   if (postId) {
     const numericPostId = Number.parseInt(postId, 10);
     if (Number.isNaN(numericPostId)) {
-      return <PostView postId={0} fromSection={fromSection} />;
+      return <PostView key={0} postId={0} fromSection={fromSection} />;
     }
-    return <PostView postId={numericPostId} fromSection={fromSection} />;
+    return (
+      <PostView
+        key={numericPostId}
+        postId={numericPostId}
+        fromSection={fromSection}
+      />
+    );
   }
 
   return <FeedView section={section} />;
