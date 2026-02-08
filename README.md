@@ -1,37 +1,38 @@
-# Hackernews Afterglow
+# HN Afterglow — A Modern Hacker News Client
 
-I built this because I wanted a prettier Hacker News to read.
+**HN Afterglow** is a visually stunning, high-performance Hacker News client built for those who appreciate both information and aesthetics. Rebuilt from the ground up using **Next.js**, it leverages the official Hacker News API to provide a seamless, real-time reading experience in a premium interface.
 
-This app is a Hacker News client built with Next.js. It fetches live stories and comments from the official HN Firebase API and presents them in a cleaner, more visual layout.
+## ✨ Why Afterglow?
 
-## Run locally
+- 🎨 **Premium UI**: A sophisticated, dark-themed interface with subtle gradients and crisp typography.
+- ⚡ **High Performance**: Built with Next.js App Router for optimal loading speeds and smooth transitions.
+- 🔊 **Real-time Data**: Fetches the latest stories and comments directly from the official HN Firebase API.
+- 📱 **Responsive Design**: Enjoy the best of tech news on any device, from desktop to mobile.
+- 🛡️ **Clean Experience**: No ads, no clutter—just you and the community's best content.
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **UI & Logic**: React 19, TypeScript
+- **Styling**: Tailwind CSS
+- **API**: Official Hacker News Firebase API
+
+## 🚀 Getting Started
 
 ```bash
+# Install dependencies
 bun install
+
+# Start development server
 bun run dev
 ```
 
-Open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000) to start reading.
 
-## Scripts
+## 📦 Quality Standards
 
-```bash
-bun run dev
-bun run build
-bun run start
-bun run lint
-bun run lint:fix
-bun run format
-bun run format:check
-```
+This project maintains high code quality through:
 
-## Commit quality checks
-
-This repo uses:
-
-- `husky` for Git hooks
-- `lint-staged` to run checks only on staged files
-- `prettier` for formatting
-- `eslint` for linting
-
-On every commit, staged files are formatted and linted automatically through `.husky/pre-commit`.
+- **Husky & lint-staged**: Automated pre-commit checks.
+- **Prettier**: Consistent code formatting.
+- **ESLint**: Strict linting rules for robust code.

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -13,9 +13,76 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#020306",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "HN Afterglow",
-  description: "A live Hacker News front page rebuilt from the HN API",
+  metadataBase: new URL("https://hackernews.coreyburns.ca"),
+  title: {
+    default: "HN Afterglow — A Modern Hacker News Experience",
+    template: "%s | HN Afterglow",
+  },
+  description:
+    "A visually stunning, high-performance Hacker News client built with Next.js and the official HN API. Experience HN with a premium, focused interface and real-time updates.",
+  keywords: [
+    "Hacker News",
+    "HN Client",
+    "Next.js",
+    "React",
+    "Tech News",
+    "Developer News",
+    "HN Afterglow",
+    "Corey Burns",
+    "Web Performance",
+    "Modern UI",
+  ],
+  authors: [{ name: "Corey Burns", url: "https://coreyburns.ca" }],
+  creator: "Corey Burns",
+  publisher: "Corey Burns",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "HN Afterglow — A Modern Hacker News Experience",
+    description:
+      "Experience Hacker News with a premium, focused interface and real-time updates.",
+    url: "https://hackernews.coreyburns.ca",
+    siteName: "HN Afterglow",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HN Afterglow — A Modern Hacker News Experience",
+    description:
+      "Experience Hacker News with a premium, focused interface and real-time updates.",
+    creator: "@coreyburns",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HN Afterglow",
+  },
 };
 
 export default function RootLayout({

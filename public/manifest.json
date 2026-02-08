@@ -1,0 +1,16 @@
+{
+  "name": "HN Afterglow",
+  "short_name": "Afterglow",
+  "description": "A modern, high-performance Hacker News experience.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020306",
+  "theme_color": "#020306",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
