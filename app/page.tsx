@@ -214,7 +214,7 @@ async function buildCommentTree(
 
 function FeedNav({ activeSection }: { activeSection: Section }) {
   return (
-    <div className="flex flex-wrap gap-2 p-3 border rounded-3xl border-white/15 bg-slate-950/45 backdrop-blur">
+    <div className="flex flex-wrap gap-2 p-3 border rounded-3xl border-white/15 bg-slate-950/90">
       <Link
         href="/"
         className="rounded-full border border-cyan-100/30 bg-cyan-300/8 px-4 py-1.5 text-xs uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-cyan-300/20"
@@ -418,7 +418,7 @@ function FeedView({ section }: { section: Section }) {
     <section className="grid gap-6">
       <FeedNav activeSection={section} />
 
-      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/55 backdrop-blur">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/95">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/70">
             Realtime Feed
@@ -443,7 +443,7 @@ function FeedView({ section }: { section: Section }) {
       </div>
 
       {section === "submit" ? (
-        <div className="p-5 border rounded-2xl border-white/20 bg-slate-900/55 backdrop-blur-md">
+        <div className="p-5 border rounded-2xl border-white/20 bg-slate-900/95">
           <h4 className="text-lg font-semibold text-white">
             Submit to HN Afterglow
           </h4>
@@ -487,7 +487,7 @@ function FeedView({ section }: { section: Section }) {
               }}
               role="button"
               tabIndex={0}
-              className="p-4 border cursor-pointer rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md"
+              className="p-4 border cursor-pointer rounded-2xl border-white/15 bg-slate-900/95"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -548,7 +548,7 @@ function FeedView({ section }: { section: Section }) {
 
 function CommentSkeleton() {
   return (
-    <div className="box-border w-full min-w-0 p-4 border animate-pulse rounded-xl border-white/10 bg-slate-900/40 backdrop-blur-md">
+    <div className="box-border w-full min-w-0 p-4 border animate-pulse rounded-xl border-white/10 bg-slate-900/70">
       <div className="h-3 w-32 rounded-full bg-white/10 mb-3" />
       <div className="space-y-2">
         <div className="h-4 w-full rounded-full bg-white/5" />
@@ -569,7 +569,7 @@ function CommentTree({
   const indent = Math.min(depth * 10, 28);
   return (
     <div
-      className="box-border w-full min-w-0 p-4 border rounded-xl border-white/20 bg-slate-900/80 backdrop-blur-md"
+      className="box-border w-full min-w-0 p-4 border rounded-xl border-white/20 bg-slate-900/98"
       style={{ marginLeft: `${indent}px` }}
     >
       <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/85">
@@ -641,7 +641,7 @@ function PostView({
     <section className="grid gap-6">
       <FeedNav activeSection={fromSection} />
 
-      <div className="px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/55 backdrop-blur">
+      <div className="px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/95">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-2xl font-semibold text-cyan-50">Post</h3>
           <Link
@@ -660,7 +660,7 @@ function PostView({
       ) : null}
 
       {item ? (
-        <article className="p-6 border rounded-2xl border-white/15 bg-slate-900/55 backdrop-blur-md">
+        <article className="p-6 border rounded-2xl border-white/15 bg-slate-900/95">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">
             {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
             {formatRelativeAge(item.time)}
