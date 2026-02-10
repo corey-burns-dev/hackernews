@@ -41,6 +41,14 @@ type HNCommentNode = HNItem & {
   children: HNCommentNode[];
 };
 
+type HNUser = {
+  id: string;
+  created: number;
+  about?: string;
+  karma: number;
+  submitted?: number[];
+};
+
 type LoadState = "idle" | "loading" | "ready" | "error";
 
 const TAB_LINKS: Array<{ id: Exclude<Section, "top">; label: string }> = [
@@ -90,6 +98,18 @@ async function fetchItemById(
   );
   if (!item || typeof item.id !== "number") return null;
   return item;
+}
+
+async function fetchUserById(
+  id: string,
+  signal: AbortSignal,
+): Promise<HNUser | null> {
+  const user = await fetchJson<HNUser | null>(
+    `${API_BASE}/user/${id}.json`,
+    signal,
+  );
+  if (!user || typeof user.id !== "string") return null;
+  return user;
 }
 
 function formatRelativeAge(unixTimeSeconds?: number): string {
@@ -511,8 +531,15 @@ function FeedView({ section }: { section: Section }) {
                     <p className="mt-2 text-sm text-slate-300/85">{snippet}</p>
                   ) : null}
                   <p className="mt-2 text-sm text-slate-300/85">
-                    {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
-                    {formatRelativeAge(item.time)}
+                    {item.score ?? 0} points by{" "}
+                    <Link
+                      href={`/?user=${item.by ?? "unknown"}&from=${section}`}
+                      onClick={(event) => event.stopPropagation()}
+                      className="hover:text-cyan-100 hover:underline"
+                    >
+                      {item.by ?? "unknown"}
+                    </Link>{" "}
+                    · {formatRelativeAge(item.time)}
                   </p>
                 </div>
                 <Link
@@ -561,9 +588,11 @@ function CommentSkeleton() {
 function CommentTree({
   node,
   depth = 0,
+  fromSection,
 }: {
   node: HNCommentNode;
   depth?: number;
+  fromSection: Section;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const commentText = toPlainText(node.text);
@@ -596,7 +625,13 @@ function CommentTree({
             {isCollapsed ? "+" : "−"}
           </button>
           <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/85">
-            {node.by ?? "unknown"} · {formatRelativeAge(node.time)}
+            <Link
+              href={`/?user=${node.by ?? "unknown"}&from=${fromSection}`}
+              className="hover:text-cyan-100 hover:underline"
+            >
+              {node.by ?? "unknown"}
+            </Link>{" "}
+            · {formatRelativeAge(node.time)}
           </p>
         </div>
       </div>
@@ -618,7 +653,12 @@ function CommentTree({
         {node.children.length > 0 ? (
           <div className="min-w-0 mt-3 space-y-3">
             {node.children.map((child) => (
-              <CommentTree key={child.id} node={child} depth={depth + 1} />
+              <CommentTree
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                fromSection={fromSection}
+              />
             ))}
           </div>
         ) : null}
@@ -707,8 +747,14 @@ function PostView({
       {item ? (
         <article className="p-6 border rounded-2xl border-white/15 bg-slate-900/95">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">
-            {item.score ?? 0} points by {item.by ?? "unknown"} ·{" "}
-            {formatRelativeAge(item.time)}
+            {item.score ?? 0} points by{" "}
+            <Link
+              href={`/?user=${item.by ?? "unknown"}&from=${fromSection}`}
+              className="hover:text-cyan-100 hover:underline px-1"
+            >
+              {item.by ?? "unknown"}
+            </Link>{" "}
+            · {formatRelativeAge(item.time)}
           </p>
           <button
             type="button"
@@ -755,10 +801,116 @@ function PostView({
           </div>
         ) : (
           comments.map((comment) => (
-            <CommentTree key={comment.id} node={comment} />
+            <CommentTree
+              key={comment.id}
+              node={comment}
+              fromSection={fromSection}
+            />
           ))
         )}
       </section>
+    </section>
+  );
+}
+
+function UserView({
+  userId,
+  fromSection,
+}: {
+  userId: string;
+  fromSection: Section;
+}) {
+  const [user, setUser] = useState<HNUser | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetchUserById(userId, controller.signal)
+      .then((nextUser) => {
+        if (!nextUser) throw new Error("User not found.");
+        setUser(nextUser);
+        setLoadState("ready");
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setUser(null);
+        setLoadState("error");
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Failed to load user profile.",
+        );
+      });
+
+    return () => controller.abort();
+  }, [userId]);
+
+  const backPath = sectionPath(fromSection);
+
+  return (
+    <section className="grid gap-6">
+      <FeedNav activeSection={fromSection} />
+
+      <div className="px-6 py-5 border rounded-3xl border-cyan-100/20 bg-slate-950/95">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-2xl font-semibold text-cyan-50">User Profile</h3>
+          <Link
+            href={backPath}
+            className="rounded-full border border-cyan-100/30 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.18em] text-cyan-100 hover:bg-cyan-300/20"
+          >
+            Back
+          </Link>
+        </div>
+      </div>
+
+      {loadState === "error" ? (
+        <div className="p-5 text-sm border rounded-2xl border-rose-200/30 bg-rose-900/20 text-rose-100">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      {user ? (
+        <article className="p-6 border rounded-2xl border-white/15 bg-slate-900/95">
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/70">
+            User: {user.id}
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold text-white">{user.id}</h1>
+          <div className="mt-4 grid grid-cols-2 gap-4 max-w-sm">
+            <div className="p-3 border rounded-xl border-white/10 bg-white/5">
+              <p className="text-[10px] uppercase tracking-widest text-cyan-100/40">
+                Karma
+              </p>
+              <p className="text-xl font-bold text-white">
+                {user.karma.toLocaleString()}
+              </p>
+            </div>
+            <div className="p-3 border rounded-xl border-white/10 bg-white/5">
+              <p className="text-[10px] uppercase tracking-widest text-cyan-100/40">
+                Joined
+              </p>
+              <p className="text-xl font-bold text-white">
+                {formatRelativeAge(user.created)}
+              </p>
+            </div>
+          </div>
+          {user.about ? (
+            <div className="mt-6">
+              <p className="text-[10px] uppercase tracking-widest text-cyan-100/40 mb-2">
+                About
+              </p>
+              <div className="w-full min-w-0 text-lg leading-relaxed text-slate-200/90 whitespace-pre-wrap">
+                {toPlainText(user.about)}
+              </div>
+            </div>
+          ) : null}
+        </article>
+      ) : loadState === "loading" ? (
+        <div className="p-5 text-sm border rounded-2xl border-white/15 bg-slate-900/55 text-slate-200">
+          Loading user profile...
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -775,7 +927,12 @@ function HackerNewsFrontPageInner() {
   const searchParams = useSearchParams();
   const section = normalizeSection(searchParams.get("section"));
   const postId = searchParams.get("post");
+  const userId = searchParams.get("user");
   const fromSection = normalizeSection(searchParams.get("from"));
+
+  if (userId) {
+    return <UserView key={userId} userId={userId} fromSection={fromSection} />;
+  }
 
   if (postId) {
     const numericPostId = Number.parseInt(postId, 10);
