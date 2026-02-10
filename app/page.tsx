@@ -565,26 +565,71 @@ function CommentTree({
   node: HNCommentNode;
   depth?: number;
 }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const commentText = toPlainText(node.text);
   const indent = Math.min(depth * 10, 28);
+
   return (
     <div
-      className="box-border w-full min-w-0 p-4 border rounded-xl border-white/20 bg-slate-900/98"
+      className="relative box-border w-full min-w-0 p-4 border rounded-xl border-white/20 bg-slate-900/98"
       style={{ marginLeft: `${indent}px` }}
     >
-      <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/85">
-        {node.by ?? "unknown"} · {formatRelativeAge(node.time)}
-      </p>
-      <p className="mt-2 w-full min-w-0 text-base leading-relaxed text-slate-100/95 wrap-break-word whitespace-pre-wrap">
-        {commentText}
-      </p>
-      {node.children.length > 0 ? (
-        <div className="min-w-0 mt-3 space-y-3">
-          {node.children.map((child) => (
-            <CommentTree key={child.id} node={child} depth={depth + 1} />
-          ))}
+      {/* Vertical 'tab' for collapsing */}
+      <button
+        type="button"
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-pointer transition-colors hover:bg-cyan-400 group border-none bg-transparent p-0 outline-none"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        aria-label={
+          isCollapsed ? "Expand comment tree" : "Collapse comment tree"
+        }
+      >
+        <div className="absolute inset-y-0 left-0 w-full bg-white/5 group-hover:bg-cyan-400/30" />
+      </button>
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center justify-center w-5 h-5 rounded-md bg-white/5 border border-white/10 text-cyan-100/70 hover:bg-white/15 hover:text-cyan-50 transition-colors text-[10px] font-mono"
+          >
+            {isCollapsed ? "+" : "−"}
+          </button>
+          <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/85">
+            {node.by ?? "unknown"} · {formatRelativeAge(node.time)}
+          </p>
         </div>
-      ) : null}
+      </div>
+
+      <motion.div
+        initial={false}
+        animate={{
+          height: isCollapsed ? 0 : "auto",
+          opacity: isCollapsed ? 0 : 1,
+          marginTop: isCollapsed ? 0 : 8,
+        }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="overflow-hidden"
+      >
+        <p className="w-full min-w-0 text-base leading-relaxed text-slate-100/95 wrap-break-word whitespace-pre-wrap">
+          {commentText}
+        </p>
+
+        {node.children.length > 0 ? (
+          <div className="min-w-0 mt-3 space-y-3">
+            {node.children.map((child) => (
+              <CommentTree key={child.id} node={child} depth={depth + 1} />
+            ))}
+          </div>
+        ) : null}
+      </motion.div>
+
+      {isCollapsed && node.children.length > 0 && (
+        <p className="mt-1 text-[10px] uppercase tracking-widest text-cyan-100/40 font-medium">
+          {node.children.length}{" "}
+          {node.children.length === 1 ? "child" : "children"} hidden
+        </p>
+      )}
     </div>
   );
 }
