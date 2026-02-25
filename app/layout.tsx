@@ -106,7 +106,7 @@ export default function RootLayout({
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.65)_100%)]" />
 
           <main className="relative z-10 mx-auto max-w-6xl px-6 pb-20 pt-10">
-            <header className="mb-6 flex items-center justify-between gap-4">
+            <header className="mb-6 flex items-center justify-between gap-4 rounded-3xl border border-white/15 bg-slate-950/65 p-4 shadow-[0_18px_40px_rgba(2,8,22,0.45)] backdrop-blur">
               <div>
                 <p className="mb-1 text-xs uppercase tracking-[0.32em] text-cyan-100/70">
                   Hackernews Relay
@@ -117,7 +117,7 @@ export default function RootLayout({
               </div>
               <Link
                 href="/"
-                className="rounded-full border border-white/30 bg-white/5 px-5 py-2 text-xs uppercase tracking-[0.2em] text-white/85 transition hover:bg-white/15"
+                className="rounded-full border border-white/30 bg-white/5 px-5 py-2 text-xs uppercase tracking-[0.2em] text-white/85 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/70"
               >
                 Home
               </Link>
