@@ -1,38 +1,30 @@
-# HN Afterglow — A Modern Hacker News Client
+# HN Afterglow
 
-**HN Afterglow** is a visually stunning, high-performance Hacker News client built for those who appreciate both information and aesthetics. Rebuilt from the ground up using **Next.js**, it leverages the official Hacker News API to provide a seamless, real-time reading experience in a premium interface.
+HN Afterglow is a modern Hacker News client built on Next.js and the official HN API. The goal is a cleaner reading experience without losing the speed and simplicity of the original feed.
 
-## ✨ Why Afterglow?
+## Highlights
 
-- 🎨 **Premium UI**: A sophisticated, dark-themed interface with subtle gradients and crisp typography.
-- ⚡ **High Performance**: Built with Next.js App Router for optimal loading speeds and smooth transitions.
-- 🔊 **Real-time Data**: Fetches the latest stories and comments directly from the official HN Firebase API.
-- 📱 **Responsive Design**: Enjoy the best of tech news on any device, from desktop to mobile.
-- 🛡️ **Clean Experience**: No ads, no clutter—just you and the community's best content.
+- Story and comment browsing powered by the official Hacker News API
+- Responsive reading layout with a more polished visual treatment
+- Cloudflare-friendly deployment flow via OpenNext
 
-## 🛠️ Tech Stack
+## Stack
 
-- **Framework**: Next.js 15 (App Router)
-- **UI & Logic**: React 19, TypeScript
-- **Styling**: Tailwind CSS
-- **API**: Official Hacker News Firebase API
+- Next.js
+- React
+- TypeScript
 
-## 🚀 Getting Started
+## Quick start
 
 ```bash
-# Install dependencies
 bun install
-
-# Start development server
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to start reading.
+Useful commands:
 
-## 📦 Quality Standards
-
-This project maintains high code quality through:
-
-- **Husky & lint-staged**: Automated pre-commit checks.
-- **Prettier**: Consistent code formatting.
-- **ESLint**: Strict linting rules for robust code.
+```bash
+bun run typecheck
+bun run build
+bun run preview:worker
+```
